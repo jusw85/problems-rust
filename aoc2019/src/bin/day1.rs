@@ -41,33 +41,41 @@
 // Your puzzle answer was 4839845.
 
 use std::fs;
-use std::fs::File;
-use std::io::{BufRead, BufReader, Read, Seek, SeekFrom};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + 'static>>;
 
 fn main() -> Result<()> {
     let input = fs::read_to_string("input/aoc2019/day1")?;
-    part1(&input)?;
-    part2(&input)?;
+    let nums: Vec<i32> =
+        input.trim()
+            .lines()
+            .filter_map(|x| {
+                let num = x.parse();
+                if let Err(ref e) = num {
+                    panic!("{}: {}", x, e);
+                }
+                num.ok()
+            })
+            .collect();
+
+    part1(&nums);
+    part2(&nums);
     Ok(())
 }
 
-fn part1(input: &str) -> Result<()> {
+fn part1(nums: &[i32]) {
     let mut sum = 0;
-    for line in input.lines() {
-        let mut val: i32 = line.parse()?;
-        val = (val / 3) - 2;
+    for val in nums {
+        let val = (*val / 3) - 2;
         sum += val;
     }
     println!("{}", sum);
-    Ok(())
 }
 
-fn part2(input: &str) -> Result<()> {
+fn part2(nums: &[i32]) {
     let mut sum = 0;
-    for line in input.lines() {
-        let mut val: i32 = line.parse()?;
+    for val in nums {
+        let mut val = *val;
         while val > 0 {
             val = (val / 3) - 2;
             val = if val < 0 { 0 } else { val };
@@ -75,5 +83,4 @@ fn part2(input: &str) -> Result<()> {
         }
     }
     println!("{}", sum);
-    Ok(())
 }
