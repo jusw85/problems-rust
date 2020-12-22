@@ -42,7 +42,6 @@
 
 use std::fs;
 
-use anyhow;
 use anyhow::Context;
 
 fn main() -> Result<(), anyhow::Error> {

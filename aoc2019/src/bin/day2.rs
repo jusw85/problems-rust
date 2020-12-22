@@ -75,22 +75,20 @@
 //
 // Your puzzle answer was 7264.
 
-use std::error::Error;
 use std::fs;
 
-fn main() -> Result<(), Box<dyn Error + 'static>> {
+use anyhow::Context;
+
+type Result<T> = std::result::Result<T, anyhow::Error>;
+
+fn main() -> Result<()> {
     let input = fs::read_to_string("input/aoc2019/day2")?;
     let nums: Vec<i32> =
         input.trim()
             .split(',')
-            .filter_map(|x| {
-                let num = x.parse();
-                if let Err(ref e) = num {
-                    panic!("{}: {}", x, e);
-                }
-                num.ok()
-            })
-            .collect();
+            .map(|s| s.parse()
+                .with_context(|| format!("Failed to parse {}", s)))
+            .collect::<Result<Vec<_>>>()?;
 
     part1(&nums);
     part2(&nums);
@@ -104,12 +102,13 @@ fn part1(nums: &Vec<i32>) {
 }
 
 fn part2(nums: &Vec<i32>) {
+    let target = 19690720;
     for noun in 0..100 {
         for verb in 0..100 {
             let mut nums = nums.clone();
             let out = exec(noun, verb, &mut nums);
-            if let Some(out) = out {
-                if out == 19690720 {
+            if let Ok(out) = out {
+                if out == target {
                     let result = 100 * noun + verb;
                     println!("{}", result);
                     return;
@@ -117,13 +116,10 @@ fn part2(nums: &Vec<i32>) {
             }
         }
     }
+    println!("Failed to find target: {}", target);
 }
 
-fn exec_simple(nums: &mut [i32]) -> Option<i32> {
-    exec(nums[1], nums[2], nums)
-}
-
-fn exec(noun: i32, verb: i32, nums: &mut [i32]) -> Option<i32> {
+fn exec(noun: i32, verb: i32, nums: &mut [i32]) -> Result<i32> {
     nums[1] = noun;
     nums[2] = verb;
 
@@ -140,29 +136,34 @@ fn exec(noun: i32, verb: i32, nums: &mut [i32]) -> Option<i32> {
         nums[pos] = match op {
             1 => num1 + num2,
             2 => num1 * num2,
-            _ => return None,
+            _ => anyhow::bail!("Unrecognized opcode: {}", op),
         };
         i += 4;
     }
-    Some(nums[0])
+    Ok(nums[0])
 }
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn test1() {
-        let mut nums = vec![1, 0, 0, 0, 99];
-        exec_simple(&mut nums);
-        assert_eq!(nums, &[2, 0, 0, 0, 99]);
+    fn exec_simple(nums: &mut [i32]) -> Result<i32> {
+        exec(nums[1], nums[2], nums)
     }
 
     #[test]
-    fn test2() {
+    fn test1() -> Result<()> {
+        let mut nums = vec![1, 0, 0, 0, 99];
+        exec_simple(&mut nums)?;
+        assert_eq!(nums, &[2, 0, 0, 0, 99]);
+        Ok(())
+    }
+
+    #[test]
+    fn test2() -> Result<()> {
         let mut nums = vec![1, 1, 1, 4, 99, 5, 6, 0, 99];
-        exec_simple(&mut nums);
+        exec_simple(&mut nums)?;
         assert_eq!(nums, &[30, 1, 1, 4, 2, 5, 6, 0, 99]);
+        Ok(())
     }
 }
