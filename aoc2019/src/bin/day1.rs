@@ -42,37 +42,34 @@
 
 use std::fs;
 
-type Result<T> = std::result::Result<T, Box<dyn std::error::Error + 'static>>;
+use anyhow;
+use anyhow::Context;
 
-fn main() -> Result<()> {
+fn main() -> Result<(), anyhow::Error> {
     let input = fs::read_to_string("input/aoc2019/day1")?;
     let nums: Vec<i32> =
         input.trim()
             .lines()
-            .filter_map(|x| {
-                let num = x.parse();
-                if let Err(ref e) = num {
-                    panic!("{}: {}", x, e);
-                }
-                num.ok()
-            })
-            .collect();
+            .enumerate()
+            .map(|(i, s)| s.parse()
+                .with_context(|| format!("Failed to parse {} at line {}", s, i + 1)))
+            .collect::<Result<Vec<_>, _>>()?;
 
-    part1(&nums);
-    part2(&nums);
+    println!("{}", part1(&nums));
+    println!("{}", part2(&nums));
     Ok(())
 }
 
-fn part1(nums: &[i32]) {
+fn part1(nums: &[i32]) -> i32 {
     let mut sum = 0;
     for val in nums {
         let val = (*val / 3) - 2;
         sum += val;
     }
-    println!("{}", sum);
+    sum
 }
 
-fn part2(nums: &[i32]) {
+fn part2(nums: &[i32]) -> i32 {
     let mut sum = 0;
     for val in nums {
         let mut val = *val;
@@ -82,5 +79,22 @@ fn part2(nums: &[i32]) {
             sum += val;
         }
     }
-    println!("{}", sum);
+    sum
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test1() {
+        assert_eq!(2, part1(&[12]));
+        assert_eq!(33583, part1(&[100756]));
+    }
+
+    #[test]
+    fn test2() {
+        assert_eq!(2, part2(&[14]));
+        assert_eq!(50346, part2(&[100756]));
+    }
 }
