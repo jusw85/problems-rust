@@ -87,15 +87,25 @@ use std::str::FromStr;
 use anyhow;
 use anyhow::Context;
 
-#[derive(Debug)]
-enum Move {
-    U(i32),
-    R(i32),
-    D(i32),
-    L(i32),
+enum Direction {
+    U,
+    R,
+    D,
+    L,
 }
 
-#[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
+impl Direction {
+    fn dxdy(&self) -> (i32, i32) {
+        match self {
+            Direction::U => (0, -1),
+            Direction::R => (1, 0),
+            Direction::D => (0, 1),
+            Direction::L => (-1, 0),
+        }
+    }
+}
+
+#[derive(Eq, PartialEq, Hash, Copy, Clone)]
 struct Point {
     x: i32,
     y: i32,
@@ -107,6 +117,11 @@ impl Point {
     }
 }
 
+struct Move {
+    dir: Direction,
+    len: i32,
+}
+
 impl FromStr for Move {
     type Err = anyhow::Error;
 
@@ -116,10 +131,10 @@ impl FromStr for Move {
             .with_context(|| format!("Failed to parse {}", s))?;
 
         match dir {
-            "U" => Ok(Move::U(len)),
-            "R" => Ok(Move::R(len)),
-            "D" => Ok(Move::D(len)),
-            "L" => Ok(Move::L(len)),
+            "U" => Ok(Move { dir: Direction::U, len }),
+            "R" => Ok(Move { dir: Direction::R, len }),
+            "D" => Ok(Move { dir: Direction::D, len }),
+            "L" => Ok(Move { dir: Direction::L, len }),
             _ => anyhow::bail!("Invalid move {}", s),
         }
     }
@@ -138,13 +153,8 @@ fn lay_wire(wire: &[Move]) -> HashMap<Point, u32> {
     let mut steps = 0;
 
     for mov in wire {
-        let (dx, dy, dist) = match *mov {
-            Move::U(dist) => (-1, 0, dist),
-            Move::R(dist) => (0, 1, dist),
-            Move::D(dist) => (1, 0, dist),
-            Move::L(dist) => (0, -1, dist),
-        };
-        for _ in 0..dist {
+        let (dx, dy) = mov.dir.dxdy();
+        for _ in 0..mov.len {
             pos.x += dx;
             pos.y += dy;
             steps += 1;
@@ -158,29 +168,36 @@ fn main() -> Result<(), anyhow::Error> {
     let input = fs::read_to_string("input/aoc2019/day3")?;
 
     let wires =
-        input.lines()
+        input.lines().take(2)
             .map(|line| parse_wire(line))
             .collect::<Result<Vec<_>, _>>()?;
 
-    anyhow::ensure!(wires.len() >= 2, "insufficient wires");
+    anyhow::ensure!(wires.len() >= 2, "insufficient lines");
 
-    let wire0 = lay_wire(&wires[0]);
-    let wire1 = lay_wire(&wires[1]);
-    let w0: HashSet<&Point> = wire0.keys().collect();
-    let w1: HashSet<&Point> = wire1.keys().collect();
-    let intersects: Vec<&&Point> = w0.intersection(&w1).collect();
+    let (p1, p2) = part1_part2(&wires[0], &wires[1]);
+    let p1 = p1.ok_or_else(|| anyhow::anyhow!("no intersections"))?;
+    let p2 = p2.ok_or_else(|| anyhow::anyhow!("no intersections"))?;
+    println!("{}", p1);
+    println!("{}", p2);
+    Ok(())
+}
+
+fn part1_part2(wire0: &[Move], wire1: &[Move]) -> (Option<u32>, Option<u32>) {
+    let wire0 = lay_wire(wire0);
+    let wire1 = lay_wire(wire1);
+    let wire0_points: HashSet<&Point> = wire0.keys().collect();
+    let wire1_points: HashSet<&Point> = wire1.keys().collect();
+    let intersects: Vec<&&Point> = wire0_points.intersection(&wire1_points).collect();
 
     let min_md = intersects.iter()
         .map(|x| x.manhattan_distance())
-        .min().ok_or_else(|| anyhow::anyhow!("empty iterator"))?;
-    println!("{}", min_md);
+        .min();
 
     let min_steps = intersects.iter()
         .map(|x| wire0[x] + wire1[x])
-        .min().unwrap();
-    println!("{}", min_steps);
+        .min();
 
-    Ok(())
+    (min_md, min_steps)
 }
 
 #[cfg(test)]
@@ -189,7 +206,19 @@ mod tests {
 
     #[test]
     fn test1() -> Result<(), anyhow::Error> {
-        let wire = parse_wire("R75,D30,R83,U83,L12,D49,R71,U7,L72")?;
+        let wire0 = parse_wire("R75,D30,R83,U83,L12,D49,R71,U7,L72")?;
+        let wire1 = parse_wire("U62,R66,U55,R34,D71,R55,D58,R83")?;
+        let (p1, p2) = part1_part2(&wire0, &wire1);
+        assert_eq!((p1.unwrap(), p2.unwrap()), (159, 610));
+        Ok(())
+    }
+
+    #[test]
+    fn test2() -> Result<(), anyhow::Error> {
+        let wire0 = parse_wire("R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51")?;
+        let wire1 = parse_wire("U98,R91,D20,R16,D67,R40,U7,R15,U6,R7")?;
+        let (p1, p2) = part1_part2(&wire0, &wire1);
+        assert_eq!((p1.unwrap(), p2.unwrap()), (135, 410));
         Ok(())
     }
 }
