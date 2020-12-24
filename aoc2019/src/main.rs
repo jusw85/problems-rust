@@ -26,6 +26,8 @@ use aoc2019::eat_at_restaurant;
 //   length: usize,
 // }
 // p x[0]@nums.length
+//
+// $ display var
 
 fn main() {
     eat_at_restaurant();
