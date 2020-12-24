@@ -5,6 +5,28 @@ use aoc2019::eat_at_restaurant;
 
 // run via
 // $ cargo run --package aoc2019 --bin day1
+
+// gdb:
+// let nums: &mut [i32]
+// ptype nums
+//
+// type = struct &mut [i32] {
+// data_ptr: *mut i32,
+// length: usize,
+// }
+//
+// p *nums.data_ptr@nums.length
+//
+//
+// let nums: &[i32]
+// ptype nums
+//
+// type = struct &[i32] {
+//   data_ptr: *mut i32,
+//   length: usize,
+// }
+// p x[0]@nums.length
+
 fn main() {
     eat_at_restaurant();
     println!("aoc2019")
