@@ -28,6 +28,11 @@ use aoc2019::eat_at_restaurant;
 // p x[0]@nums.length
 //
 // $ display var
+//
+// #![allow(dead_code)]
+// #![allow(unused_imports)]
+// #![allow(unused_variables)]
+// #![allow(unused_mut)]
 
 fn main() {
     eat_at_restaurant();
