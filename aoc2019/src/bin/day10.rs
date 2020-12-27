@@ -2,28 +2,20 @@
 //
 //
 
-#![allow(dead_code)]
-#![allow(unused_imports)]
-#![allow(unused_variables)]
-#![allow(unused_mut)]
-
-use std::collections::{HashMap, VecDeque};
+use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::fs;
-
-use anyhow::Context;
 
 type Result<T> = std::result::Result<T, anyhow::Error>;
 
 fn main() -> Result<()> {
     let input = fs::read_to_string("input/aoc2019/day10")?;
-    let p1 = part1(&input);
-
-    println!("{:?}", p1);
-
+    let p1p2 = part1part2(&input);
+    println!("{:?}", p1p2);
     Ok(())
 }
 
-fn part1(s: &str) -> ((i32, i32), u32) {
+fn part1part2(s: &str) -> ((i32, i32), usize, Option<i32>) {
     let grid: Vec<Vec<u8>> =
         s.trim()
             .lines()
@@ -41,43 +33,75 @@ fn part1(s: &str) -> ((i32, i32), u32) {
         }
     }
 
-    let mut map: HashMap<_, Vec<_>> = HashMap::new();
+    let mut los_map: HashMap<_, Vec<_>> = HashMap::new();
 
-    let mut los = vec![vec![false; asteroids.len()]; asteroids.len()];
-    for i in 0..asteroids.len() {
-        for j in (i + 1)..asteroids.len() {
-            let a1 = asteroids[i];
-            let a2 = asteroids[j];
-            let g_a1a2 = simplify(gradient(a1, a2));
+    for (i, &a1) in asteroids.iter().enumerate() {
+        for (j, &a2) in asteroids[i + 1..].iter().enumerate() {
+            let g_a1a2 = simplify(dydx(a1, a2));
 
             let mut has_los = true;
-            for a3 in &asteroids[(i + 1)..j] {
-                let g_a1a3 = simplify(gradient(a1, *a3));
+            for &a3 in asteroids[(i + 1)..(i + 1 + j)].iter() {
+                let g_a1a3 = simplify(dydx(a1, a3));
                 if g_a1a2 == g_a1a3 {
                     has_los = false;
                     break;
                 }
             }
-
             if has_los {
-                los[i][j] = true;
-                los[j][i] = true;
-
-                map.entry(a1).or_default().push(a2);
-                map.entry(a2).or_default().push(a1);
+                los_map.entry(a1).or_default().push(a2);
+                los_map.entry(a2).or_default().push(a1);
             }
         }
     }
 
-    // map.iter().map(|(key, val)| (key, val.len())).max_by_key(|(_, len)| *len).unwrap();
-    
-    let los_count: Vec<_> = los.iter().map(|row| row.iter().filter(|&&e| e).count()).collect();
-    let (max_los_idx, max_los) = los_count.iter().enumerate().max_by_key(|(_, &val)| val).unwrap();
-    let (y, x) = asteroids[max_los_idx];
-    ((x, y), *max_los as u32)
+    let (&origin, los_asteroids) = los_map.iter_mut()
+        .max_by(|(_, v1), (_, v2)| {
+            let l1 = v1.len();
+            let l2 = v2.len();
+            return l1.cmp(&l2);
+        }).unwrap();
+
+    los_asteroids.sort_unstable_by(|&p1, &p2| {
+        let q1 = quadrant(origin, p1);
+        let q2 = quadrant(origin, p2);
+        if q1 != q2 {
+            return q1.cmp(&q2);
+        }
+        let g1 = gradient(origin, p1);
+        let g2 = gradient(origin, p2);
+        assert_ne!(g1, g2);
+        if g1 > g2 { Ordering::Less } else { Ordering::Greater }
+    });
+
+    let xy200 = if los_asteroids.len() >= 200 {
+        let (y, x) = los_asteroids[199];
+        Some(x * 100 + y)
+    } else {
+        None
+    };
+
+    let (y, x) = origin;
+    ((x, y), los_asteroids.len(), xy200)
 }
 
-fn gradient((y1, x1): (i32, i32), (y2, x2): (i32, i32)) -> (i32, i32) {
+fn quadrant((origin_y, origin_x): (i32, i32), (y, x): (i32, i32)) -> u8 {
+    if (x >= origin_x) && (y < origin_y) { return 0; }
+    if (y >= origin_y) && (x > origin_x) { return 1; }
+    if (x <= origin_x) && (y > origin_y) { return 2; }
+    if (y <= origin_y) && (x < origin_x) { return 3; }
+    unreachable!();
+}
+
+fn gradient(p1: (i32, i32), p2: (i32, i32)) -> f64 {
+    let (y, x) = dydx(p1, p2);
+    let mut res = -(y as f64 / x as f64); // flip y direction
+    if res.is_infinite() && res.is_sign_negative() {
+        res = f64::INFINITY;
+    }
+    res
+}
+
+fn dydx((y1, x1): (i32, i32), (y2, x2): (i32, i32)) -> (i32, i32) {
     ((y1 - y2), (x1 - x2))
 }
 
@@ -116,14 +140,15 @@ mod tests {
     }
 
     #[test]
-    fn test_part1() -> Result<()> {
+    fn test() -> Result<()> {
         let s = "
         .#..#
         .....
         #####
         ....#
         ...##";
-        assert_eq!(part1(s), ((3, 4), 8));
+        let (coord, len, _) = part1part2(s);
+        assert_eq!((coord, len), ((3, 4), 8));
 
         let s = "
         ......#.#.
@@ -136,7 +161,8 @@ mod tests {
         .##.#..###
         ##...#..#.
         .#....####";
-        assert_eq!(part1(s), ((5, 8), 33));
+        let (coord, len, _) = part1part2(s);
+        assert_eq!((coord, len), ((5, 8), 33));
 
         let s = "
         .#..#..###
@@ -149,7 +175,8 @@ mod tests {
         #..#.#.###
         .##...##.#
         .....#.#..";
-        assert_eq!(part1(s), ((6, 3), 41));
+        let (coord, len, _) = part1part2(s);
+        assert_eq!((coord, len), ((6, 3), 41));
 
         let s = "
         .#..##.###...#######
@@ -172,7 +199,7 @@ mod tests {
         .#.#.###########.###
         #.#.#.#####.####.###
         ###.##.####.##.#..##";
-        assert_eq!(part1(s), ((11, 13), 210));
+        assert_eq!(part1part2(s), ((11, 13), 210, Some(802)));
         Ok(())
     }
 }
