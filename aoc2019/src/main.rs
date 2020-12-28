@@ -1,4 +1,3 @@
-use aoc2019::eat_at_restaurant;
 
 // get cookie via firefox -> web developer -> network -> copy cookie
 // i=1;curl 'https://adventofcode.com/2019/day/$i/input' -H 'Cookie: session=53616c7465645f5f6fe08b32142bb3e5ce2616eeba44a4051dcb3ee6f38618f4a2b13058e2d4a02d35320bd5f77fb48a' > day$i
@@ -34,7 +33,11 @@ use aoc2019::eat_at_restaurant;
 // #![allow(unused_variables)]
 // #![allow(unused_mut)]
 
+use aoc2019::Point;
+
 fn main() {
-    eat_at_restaurant();
-    println!("aoc2019")
+    // let x = Point::new(0, 0);
+    // let x = Point::<i32>::default();
+    // println!("{:?}", x);
+    let x = Point::<i32>::default();
 }
