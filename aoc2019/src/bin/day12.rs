@@ -267,13 +267,11 @@ fn parse(s: &str) -> Result<Vec<Body>> {
 }
 
 fn sim(bodies: &mut Vec<Body>) {
-    for i in 1..bodies.len() {
-        let (left, right) = bodies.split_at_mut(i);
-        let b1 = left.get_mut(i - 1).unwrap();
-        for b2 in right.iter_mut() {
-            let del: Vector3 = delta_vec3(b1.pos, b2.pos);
-            b1.vel += del;
-            b2.vel -= del;
+    for i in 0..bodies.len() {
+        for j in i + 1..bodies.len() {
+            let del = delta_vec3(bodies[i].pos, bodies[j].pos);
+            bodies[i].vel += del;
+            bodies[j].vel -= del;
         }
     }
     for b in bodies.iter_mut() {
@@ -390,7 +388,7 @@ mod tests {
         <x=2, y=-7, z=3>
         <x=9, y=-8, z=-3>
         ";
-        let mut bodies = parse(s)?;
+        let bodies = parse(s)?;
         assert_eq!(4686774924, seen_steps(bodies));
         Ok(())
     }
