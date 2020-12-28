@@ -7,9 +7,9 @@
 #![allow(unused_variables)]
 #![allow(unused_mut)]
 
+use std::{fs, iter};
 use std::cmp::Ordering;
-use std::collections::HashMap;
-use std::fs;
+use std::collections::{HashMap, HashSet};
 
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -21,10 +21,12 @@ type Result<T> = std::result::Result<T, anyhow::Error>;
 fn main() -> Result<()> {
     let input = fs::read_to_string("input/aoc2019/day12")?;
     let mut bodies = parse(&input)?;
+    let mut bodies_clone = bodies.clone();
     for _ in 0..1000 {
         sim(&mut bodies);
     }
-    println!("{:?}", energy(bodies));
+    println!("{}", energy(bodies));
+    println!("{}", seen_steps(bodies_clone));
     Ok(())
 }
 
@@ -80,6 +82,62 @@ fn delta_i32(from: i32, to: i32) -> i32 {
     }
 }
 
+fn seen_steps(bodies: Vec<Body>) -> u64 {
+    fn count_steps(mut bodies: Vec<Body>) -> i32 {
+        let mut seen = HashSet::new();
+        let mut steps = 0;
+        while !seen.contains(&bodies) {
+            seen.insert(bodies.clone());
+            sim(&mut bodies);
+            steps += 1;
+        }
+        steps
+    }
+    let mut bodies_x: Vec<_> = bodies.iter().map(|body| {
+        let mut pos = Vector3::ZERO;
+        let vel = Vector3::ZERO;
+        pos.x = body.pos.x;
+        Body { pos, vel }
+    }).collect();
+
+    let mut bodies_y: Vec<_> = bodies.iter().map(|body| {
+        let mut pos = Vector3::ZERO;
+        let vel = Vector3::ZERO;
+        pos.y = body.pos.y;
+        Body { pos, vel }
+    }).collect();
+
+    let mut bodies_z: Vec<_> = bodies.iter().map(|body| {
+        let mut pos = Vector3::ZERO;
+        let vel = Vector3::ZERO;
+        pos.z = body.pos.z;
+        Body { pos, vel }
+    }).collect();
+
+    let steps_x = count_steps(bodies_x) as u64;
+    let steps_y = count_steps(bodies_y) as u64;
+    let steps_z = count_steps(bodies_z) as u64;
+
+    lcm(lcm(steps_x, steps_y), steps_z)
+}
+
+fn gcd(mut a: u64, mut b: u64) -> u64 {
+    let mut t;
+    while b != 0 {
+        t = b;
+        b = a % b;
+        a = t;
+    }
+    a
+}
+
+fn lcm(a: u64, b: u64) -> u64 {
+    if a == 0 && b == 0 {
+        return 0;
+    }
+    (a * b) / gcd(a, b)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -93,10 +151,24 @@ mod tests {
         <x=3, y=5, z=-1>
         ";
         let mut bodies = parse(s)?;
+        assert_eq!(2772, seen_steps(bodies.clone()));
         for _ in 0..10 {
             sim(&mut bodies);
         }
         assert_eq!(179, energy(bodies));
+        Ok(())
+    }
+
+    #[test]
+    fn test2() -> Result<()> {
+        let s = r"
+        <x=-8, y=-10, z=0>
+        <x=5, y=5, z=10>
+        <x=2, y=-7, z=3>
+        <x=9, y=-8, z=-3>
+        ";
+        let mut bodies = parse(s)?;
+        assert_eq!(4686774924, seen_steps(bodies));
         Ok(())
     }
 }
