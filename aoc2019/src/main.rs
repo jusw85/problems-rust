@@ -33,11 +33,11 @@
 // #![allow(unused_variables)]
 // #![allow(unused_mut)]
 
-use aoc2019::Point;
+// use aoc2019::Point;
 
 fn main() {
     // let x = Point::new(0, 0);
     // let x = Point::<i32>::default();
     // println!("{:?}", x);
-    let x = Point::<i32>::default();
+    // let x = Point::<i32>::default();
 }

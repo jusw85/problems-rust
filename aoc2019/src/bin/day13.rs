@@ -68,7 +68,7 @@ fn play(nums: &Vec<i64>, play_for_free: bool) -> Result<()> {
     let mut nums = nums.clone();
     if play_for_free { nums[0] = 2; }
     let thread = thread::spawn(move || -> Result<()> {
-        Prog::new(nums.clone(), from_input, output).exec()?;
+        Prog::new(nums, from_input, output).exec()?;
         Ok(())
     });
 
