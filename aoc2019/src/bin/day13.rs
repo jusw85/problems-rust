@@ -56,6 +56,7 @@ fn main() -> Result<()> {
                 .with_context(|| format!("Failed to parse {}", s)))
             .collect::<Result<_>>()?;
 
+    play(&nums, false)?;
     play(&nums, true)?;
     Ok(())
 }
@@ -93,11 +94,12 @@ fn play(nums: &Vec<i64>, play_for_free: bool) -> Result<()> {
                 }
                 Reply::Blocked => {
                     // pprint(&grid);
-                    match paddle_pos_x.cmp(&ball_pos_x) {
-                        Ordering::Less => input.send(1)?,
-                        Ordering::Equal => input.send(0)?,
-                        Ordering::Greater => input.send(-1)?,
-                    };
+                    input.send(
+                        match paddle_pos_x.cmp(&ball_pos_x) {
+                            Ordering::Less => 1,
+                            Ordering::Equal => 0,
+                            Ordering::Greater => -1,
+                        })?;
                 }
             }
         }
