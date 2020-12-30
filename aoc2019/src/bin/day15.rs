@@ -99,6 +99,7 @@ fn main() -> Result<()> {
 
 fn explore(nums: &Vec<i64>) -> Result<(HashMap<Vector2, u8>, Vector2)> {
     let pos = Vector2::ZERO;
+    let mut oxy_pos = None;
     let prog = Prog::new(nums.clone());
     let depth = 0u32;
 
@@ -135,6 +136,7 @@ fn explore(nums: &Vec<i64>) -> Result<(HashMap<Vector2, u8>, Vector2)> {
                         let new_depth = depth + 1;
                         depths.insert(new_pos, new_depth);
                         to_process.push_back((new_pos, new_prog, new_depth));
+                        if tile_id == 2 { oxy_pos = Some(new_pos); }
                     }
                     _ => (),
                 }
@@ -145,9 +147,9 @@ fn explore(nums: &Vec<i64>) -> Result<(HashMap<Vector2, u8>, Vector2)> {
     let screen = grid_to_screen(&grid);
     pprint(&screen);
 
-    let (&pos, _) = grid.iter().find(|(_, &v)| v == b'X').unwrap();
-    println!("{}", depths.get(&pos).unwrap());
-    Ok((grid, pos))
+    let oxy_pos = oxy_pos.ok_or(anyhow::anyhow!("oxygen not found"))?;
+    println!("{}", depths.get(&oxy_pos).unwrap());
+    Ok((grid, oxy_pos))
 }
 
 fn oxyfill(grid: HashMap<Vector2, u8>, pos: Vector2) {
