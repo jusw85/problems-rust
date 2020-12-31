@@ -119,23 +119,17 @@ fn phase_dp(input: &str, num_phases: u32) -> String {
             *sum = *sum + i;
             Some(*sum)
         }).collect::<Vec<_>>();
-
-        let mut ops = [b'-', b'-', b'+', b'+'].iter().cycle();
         digits.copy_from_slice(&sums);
 
+        let mut coeffs = [-1, -1, 1, 1].iter().cycle();
         let mut gradient = 2;
         for i in 1..n {
             let mut row = n - 1;
             let mut col = ((n - 1) - i) as i32;
 
-            let op = ops.next().unwrap();
+            let coeff = coeffs.next().unwrap();
             while col >= 0 {
-                match op {
-                    b'-' => digits[row] -= sums[col as usize],
-                    b'+' => digits[row] += sums[col as usize],
-                    _ => unreachable!(),
-                }
-
+                digits[row] += coeff * sums[col as usize];
                 row -= 1;
                 col -= gradient;
             }
