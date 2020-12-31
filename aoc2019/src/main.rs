@@ -34,6 +34,13 @@
 // #![allow(unused_mut)]
 
 // use aoc2019::Point;
+//
+// use std::time::Instant;
+// let now = Instant::now();
+//
+// let elapsed = now.elapsed();
+// println!("Elapsed: {:.2?}", elapsed);
+
 
 fn main() {
     // let x = Point::new(0, 0);
