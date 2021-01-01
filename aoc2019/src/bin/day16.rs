@@ -280,6 +280,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_long() {
         let inp = "03036732577212944063491565474664";
         let msg = phase_dp(&inp.repeat(10000), 100);
