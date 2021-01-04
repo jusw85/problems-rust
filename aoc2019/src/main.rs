@@ -48,3 +48,19 @@ fn main() {
     // println!("{:?}", x);
     // let x = Point::<i32>::default();
 }
+
+// fn print_type_of<T>(_: &T) { // to_remove
+//     println!("{}", std::any::type_name::<T>())
+// }
+
+// fn find_char_uniq(grid: &Vec<Vec<u8>>, c: u8) -> Option<Vector2> {
+//     if let Some((y, x, _)) = grid.iter().enumerate()
+//         .flat_map(
+//             |(row, line)| line.iter().enumerate().map(
+//                 move |(col, elem)| (row as i64, col as i64, elem)))
+//         .find(|(_, _, &elem)| elem == c) {
+//         Some(Vector2::new(x, y))
+//     } else {
+//         None
+//     }
+// }
