@@ -283,8 +283,10 @@ fn parse_grid(grid: &Vec<Vec<u8>>)
               -> (Vector2, Vector2,
                   HashMap<Vector2, Vector2>,
                   HashMap<Vector2, Alignment>) {
-    let re_left = Regex::new(r"(?P<label>[A-Z]{2})(?P<tile>\.)").unwrap();
-    let re_right = Regex::new(r"(?P<tile>\.)(?P<label>[A-Z]{2})").unwrap();
+    lazy_static::lazy_static! {
+        static ref RE_LEFT: Regex = Regex::new(r"(?P<label>[A-Z]{2})(?P<tile>\.)").unwrap();
+        static ref RE_RIGHT: Regex = Regex::new(r"(?P<tile>\.)(?P<label>[A-Z]{2})").unwrap();
+    }
 
     let mut labels = HashMap::new();
 
@@ -312,8 +314,8 @@ fn parse_grid(grid: &Vec<Vec<u8>>)
                 };
 
             for (label, pos, alignment) in
-            re_left.captures_iter(s).map(|cap| process_cap(cap, true)).chain(
-                re_right.captures_iter(s).map(|cap| process_cap(cap, false))) {
+            RE_LEFT.captures_iter(s).map(|cap| process_cap(cap, true)).chain(
+                RE_RIGHT.captures_iter(s).map(|cap| process_cap(cap, false))) {
                 labels.entry(label).or_insert(Vec::new()).push((pos, alignment));
             }
         }
