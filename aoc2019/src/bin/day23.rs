@@ -86,7 +86,7 @@ fn exec(nums: &Vec<i64>) -> Result<()> {
                 idle = false;
                 let (id, x, y) = (output[0] as usize, output[1], output[2]);
                 if id == 255 {
-                    if let None = first_y {
+                    if first_y == None {
                         first_y = Some(y);
                     }
                     nat = Some((x, y));
