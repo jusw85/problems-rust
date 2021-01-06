@@ -53,15 +53,20 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn exec(nums: &Vec<i64>) -> Result<()> {
+fn init_progs(nums: &Vec<i64>, n: usize) -> Vec<Prog> {
     let mut progs = Vec::new();
-    for i in 0..50 {
+    for i in 0..n {
         let mut prog = Prog::new(nums.clone());
-        prog.send(i);
+        prog.send(i as i64);
         progs.push(prog);
     }
+    progs
+}
 
-    let mut nat = Vec::new();
+fn exec(nums: &Vec<i64>) -> Result<()> {
+    let mut progs = init_progs(nums, 50);
+
+    let mut nat = None;
     let mut first_y = None;
     let mut previous_wakeup_y = None;
 
@@ -78,30 +83,26 @@ fn exec(nums: &Vec<i64>) -> Result<()> {
             let outputs = prog.recv_iter().collect::<Vec<_>>();
             assert_eq!(outputs.len() % 3, 0);
             for output in outputs.chunks_exact(3) {
+                idle = false;
                 let (id, x, y) = (output[0] as usize, output[1], output[2]);
                 if id == 255 {
                     if let None = first_y {
                         first_y = Some(y);
                     }
-                    nat.push((x, y));
-                    continue;
+                    nat = Some((x, y));
+                } else {
+                    progs[id].send(x);
+                    progs[id].send(y);
                 }
-                let to_prog = &mut progs[id];
-                to_prog.send(x);
-                to_prog.send(y);
-                idle = false;
             }
         }
         if idle {
-            let &(x, y) = nat.last().unwrap();
-            if let Some(py) = previous_wakeup_y {
-                if py == y {
-                    break;
-                }
+            let (x, y) = nat.unwrap();
+            if previous_wakeup_y == Some(y) {
+                break;
             }
-            let prog = &mut progs[0];
-            prog.send(x);
-            prog.send(y);
+            progs[0].send(x);
+            progs[0].send(y);
             previous_wakeup_y = Some(y);
         }
     };
