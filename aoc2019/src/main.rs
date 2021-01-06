@@ -1,4 +1,3 @@
-
 // get cookie via firefox -> web developer -> network -> copy cookie
 // i=1;curl 'https://adventofcode.com/2019/day/$i/input' -H 'Cookie: session=53616c7465645f5f6fe08b32142bb3e5ce2616eeba44a4051dcb3ee6f38618f4a2b13058e2d4a02d35320bd5f77fb48a' > day$i
 
@@ -33,8 +32,7 @@
 // #![allow(unused_variables)]
 // #![allow(unused_mut)]
 
-// use aoc2019::Point;
-//
+
 // use std::time::Instant;
 // let now = Instant::now();
 //
@@ -42,25 +40,12 @@
 // println!("Elapsed: {:.2?}", elapsed);
 
 
-fn main() {
-    // let x = Point::new(0, 0);
-    // let x = Point::<i32>::default();
-    // println!("{:?}", x);
-    // let x = Point::<i32>::default();
+fn main() {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test() {}
 }
-
-// fn print_type_of<T>(_: &T) { // to_remove
-//     println!("{}", std::any::type_name::<T>())
-// }
-
-// fn find_char_uniq(grid: &Vec<Vec<u8>>, c: u8) -> Option<Vector2> {
-//     if let Some((y, x, _)) = grid.iter().enumerate()
-//         .flat_map(
-//             |(row, line)| line.iter().enumerate().map(
-//                 move |(col, elem)| (row as i64, col as i64, elem)))
-//         .find(|(_, _, &elem)| elem == c) {
-//         Some(Vector2::new(x, y))
-//     } else {
-//         None
-//     }
-// }
