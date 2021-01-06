@@ -1,6 +1,9 @@
-// use aoc2019::eat_at_restaurant;
+fn main() {}
 
-fn main() {
-    // eat_at_restaurant();
-    println!("aoc2020")
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test() {}
 }
