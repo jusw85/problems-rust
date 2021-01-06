@@ -33,7 +33,6 @@
 //
 // Your puzzle answer was 19316.
 
-
 use std::fs;
 
 use anyhow::Context;
