@@ -43,6 +43,7 @@ use std::fs;
 
 use anyhow::Context;
 use anyhow::Result;
+use itertools::Itertools;
 
 fn main() -> Result<()> {
     let input = fs::read_to_string("input/aoc2020/day1")?;
@@ -72,12 +73,10 @@ fn part1(nums: &HashSet<i32>) -> Option<i32> {
 }
 
 fn part2(nums: &HashSet<i32>) -> Option<i32> {
-    for i in nums.iter() {
-        for j in nums.iter() {
-            let k = 2020 - i - j;
-            if nums.contains(&k) {
-                return Some(i * j * k);
-            }
+    for (i, j) in nums.iter().cartesian_product(nums.iter()) {
+        let k = 2020 - i - j;
+        if nums.contains(&k) {
+            return Some(i * j * k);
         }
     }
     None

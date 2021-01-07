@@ -45,13 +45,14 @@ use std::fs;
 use std::str::FromStr;
 
 use anyhow::Result;
+use itertools::Itertools;
 use regex::Regex;
 
 fn main() -> Result<()> {
     let input = fs::read_to_string("input/aoc2020/day2")?;
-    let passwords = input.lines()
+    let passwords: Vec<_> = input.lines()
         .map(|line| line.parse::<Password>())
-        .collect::<Result<Vec<_>>>()?;
+        .try_collect()?;
 
     let count = passwords.iter()
         .filter(|p| p.is_valid1())
