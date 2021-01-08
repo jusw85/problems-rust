@@ -30,11 +30,18 @@ name = "aoc2020"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "assert_matches",
  "itertools",
  "lazy_static",
  "num",
  "regex",
 ]
+
+[[package]]
+name = "assert_matches"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "695579f0f2520f3774bb40461e5adb066459d4e0af4d59d20175484fb8e9edf1"
 
 [[package]]
 name = "autocfg"
