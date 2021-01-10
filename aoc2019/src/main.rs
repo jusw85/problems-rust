@@ -39,6 +39,12 @@
 // let elapsed = now.elapsed();
 // println!("Elapsed: {:.2?}", elapsed);
 
+// let mut iter: &mut dyn Iterator<Item=Vector2> = &mut iter;
+// let mut iter1;
+// if directly_adj {
+//     iter1 = iter.take(1);
+//     iter = &mut iter1;
+// }
 
 fn main() {}
 
