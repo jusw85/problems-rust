@@ -442,22 +442,22 @@ fn to_4d(pts: &HashSet<(usize, usize)>) -> HashSet<Vec<i32>> {
 }
 
 fn evolve(pts: &mut HashSet<Vec<i32>>) {
-    let mut active = HashMap::new();
+    let mut num_neighbours = HashMap::new();
     for pt in pts.iter() {
         for npt in neighbours(pt) {
-            *active.entry(npt).or_insert(0) += 1;
+            *num_neighbours.entry(npt).or_insert(0) += 1;
         }
     }
     // pts should be cloned for atomic operation, but ok since rule overlap (3 neighbours = active)
     pts.retain(|pt| {
-        if let Some(&n) = active.get(pt) {
+        if let Some(&n) = num_neighbours.get(pt) {
             if n == 2 || n == 3 {
                 return true;
             }
         }
         return false;
     });
-    let iter = active.iter().filter_map(|(pt, &n)|
+    let iter = num_neighbours.iter().filter_map(|(pt, &n)|
         if n == 3 {
             Some(pt.clone())
         } else {
