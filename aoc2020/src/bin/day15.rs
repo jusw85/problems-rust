@@ -58,7 +58,6 @@
 //
 // Your puzzle answer was 16671510.
 
-use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::fs;
 
@@ -81,21 +80,16 @@ fn count(s: &str, n: usize) -> i64 {
         return nums[n].1;
     }
 
-    let (&(turn, mut next), init) = nums.split_last().unwrap();
+    let (last, init) = nums.split_last().unwrap();
     let mut spoken = init.iter()
         .map(|&(i, elem)| (elem, i))
         .collect::<HashMap<_, _>>();
 
+    let (turn, mut next) = *last;
     for turn in turn..n {
-        match spoken.entry(next) {
-            Entry::Occupied(mut e) => {
-                let prev = e.insert(turn);
-                next = (turn - prev) as i64;
-            }
-            Entry::Vacant(e) => {
-                e.insert(turn);
-                next = 0;
-            }
+        next = match spoken.insert(next, turn) {
+            None => 0,
+            Some(prev) => (turn - prev) as i64,
         }
     }
     next
