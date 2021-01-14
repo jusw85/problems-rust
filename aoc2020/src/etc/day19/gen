@@ -1,0 +1,6 @@
+#!/bin/bash
+
+perl part1.pl test_1 > test_1.pest
+perl part2.pl test_2 > test_2.pest
+perl part1.pl day19 > day19_1.pest
+perl part2.pl day19 > day19_2.pest
