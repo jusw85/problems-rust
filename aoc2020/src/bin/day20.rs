@@ -279,6 +279,7 @@ use regex::Regex;
 
 use crate::chargrid::Grid;
 use crate::tileborder::SquareTileBorder;
+use aoc2020::Enumerate2D;
 
 const DRAGON_RAW: &str = r"
                   # 
@@ -465,23 +466,21 @@ fn assemble_image(tileborders: Vec<Vec<SquareTileBorder>>,
     let n = (tile_size - 2) * grid_size;
     let mut res = vec![vec![b'.'; n]; n];
 
-    for (grid_y, row) in tileborders.iter().enumerate() {
-        for (grid_x, tb) in row.iter().enumerate() {
-            let mut gridp = &tiles[&tb.id];
-            let mut grid;
-            if tb.is_flipped {
-                grid = gridp.flip_x();
-                gridp = &grid;
-            }
-            for _ in 0..tb.num_cw_rotations {
-                grid = gridp.rotate_cw();
-                gridp = &grid;
-            }
-            let (offset_y, offset_x) = (grid_y * (tile_size - 2), grid_x * (tile_size - 2));
-            for i in 1..(tile_size - 1) {
-                for j in 1..(tile_size - 1) {
-                    res[offset_y + i - 1][offset_x + j - 1] = gridp[i][j];
-                }
+    for (grid_y, grid_x, tb) in tileborders.iter().enumerate_2d() {
+        let mut gridp = &tiles[&tb.id];
+        let mut grid;
+        if tb.is_flipped {
+            grid = gridp.flip_x();
+            gridp = &grid;
+        }
+        for _ in 0..tb.num_cw_rotations {
+            grid = gridp.rotate_cw();
+            gridp = &grid;
+        }
+        let (offset_y, offset_x) = (grid_y * (tile_size - 2), grid_x * (tile_size - 2));
+        for i in 1..(tile_size - 1) {
+            for j in 1..(tile_size - 1) {
+                res[offset_y + i - 1][offset_x + j - 1] = gridp[i][j];
             }
         }
     }
@@ -645,7 +644,7 @@ mod chargrid {
     use anyhow::Result;
     use itertools::Itertools;
 
-    use aoc2020::TrimEmpty;
+    use aoc2020::{TrimEmpty, Enumerate2D};
 
     use crate::geom::Vector2;
 
@@ -681,11 +680,7 @@ mod chargrid {
         }
 
         pub fn iter(&self) -> impl Iterator<Item=(usize, usize, &u8)> {
-            self.grid.iter().enumerate()
-                .flat_map(|(y, row)| {
-                    row.iter().enumerate()
-                        .map(move |(x, c)| (y, x, c))
-                })
+            self.grid.iter().enumerate_2d()
         }
 
         pub fn flip_x(&self) -> Grid {
