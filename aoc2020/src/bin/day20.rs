@@ -364,8 +364,8 @@ mod tileborder {
 
             let n = to_int(&grid[0]);
             let s = to_int(&grid[grid.num_rows - 1]);
-            let w = to_int(&grid.iter().filter_map(|(_, x, &c)| if x == 0 { Some(c) } else { None }).collect_vec());
-            let e = to_int(&grid.iter().filter_map(|(_, x, &c)| if x == grid.num_cols - 1 { Some(c) } else { None }).collect_vec());
+            let w = to_int(&grid.iter_row().map(|v| v[0]).collect_vec());
+            let e = to_int(&grid.iter_row().map(|v| v[v.len() - 1]).collect_vec());
 
             SquareTileBorder { id, n, e, s, w, len: grid.num_rows, num_cw_rotations: 0, is_flipped: false }
         }
@@ -681,6 +681,10 @@ mod chargrid {
 
         pub fn iter(&self) -> impl Iterator<Item=(usize, usize, &u8)> {
             self.grid.iter().enumerate_2d()
+        }
+
+        pub fn iter_row(&self) -> impl Iterator<Item=&Vec<u8>> {
+            self.grid.iter()
         }
 
         pub fn flip_x(&self) -> Grid {
