@@ -449,8 +449,8 @@ fn play_rec(p0: &mut VecDeque<u32>,
             p1: &mut VecDeque<u32>,
             mut cached_winner: &mut HashMap<(VecDeque<u32>, VecDeque<u32>), usize>) -> usize {
     let initial_state = (p0.clone(), p1.clone());
-    if cached_winner.contains_key(&initial_state) {
-        return *cached_winner.get(&initial_state).unwrap();
+    if let Some(w) = cached_winner.get(&initial_state) {
+        return *w;
     }
 
     let mut game_winner = None;
