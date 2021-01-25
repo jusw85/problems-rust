@@ -40,8 +40,10 @@
 //
 // Your puzzle answer was xncgqbcp,frkmp,qhqs,qnhjhn,dhsnxr,rzrktx,ntflq,lgnhmx.
 
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::fs;
+use std::hash::Hash;
 
 use anyhow::Result;
 use itertools::Itertools;
@@ -51,10 +53,10 @@ use aoc2020::TrimEmpty;
 
 fn main() -> Result<()> {
     let input = fs::read_to_string("input/aoc2020/day21")?;
-    let (recipes, all) = parse(&input);
-    let solved = solve(&recipes);
-    println!("{}", part1(&all, &solved));
-    println!("{}", part2(&solved));
+    let (allergen_ingredients, all_ingredients) = parse(&input);
+    let soln = solve(&allergen_ingredients);
+    println!("{}", part1(&all_ingredients, &soln));
+    println!("{}", part2(&soln));
     Ok(())
 }
 
@@ -81,40 +83,38 @@ fn parse(s: &str) -> (HashMap<String, Vec<HashSet<String>>>, Vec<String>) {
     (res, all)
 }
 
-fn solve(recipes: &HashMap<String, Vec<HashSet<String>>>)
-         -> HashMap<String, String> {
-    let mut res = HashMap::new();
-    let mut to_process = Vec::new();
-    for (k, vs) in recipes.iter() {
-        let mut candidate_ingredients = vs[0].clone();
-        for v in &vs[1..] {
-            candidate_ingredients.retain(|ingredient| v.contains(ingredient));
-        }
-        if candidate_ingredients.len() == 1 {
-            to_process.push(candidate_ingredients.iter().next().unwrap().to_owned());
-        }
-        res.insert(k.to_owned(), candidate_ingredients);
-    }
+fn solve(allergen_ingredients: &HashMap<String, Vec<HashSet<String>>>)
+         -> HashMap<String, String>
+{
+    let mut res = allergen_ingredients.iter()
+        .map(|(allergen, ingredients)| (allergen, intersects(ingredients)))
+        .collect::<HashMap<_, _>>();
+
+    let mut to_process = res.values()
+        .filter(|ingredients| ingredients.len() == 1)
+        .map(|ingredients| *ingredients.iter().next().unwrap())
+        .collect_vec();
+
     while !to_process.is_empty() {
         let next = to_process.pop().unwrap();
-        for v in res.values_mut()
-            .filter(|v| v.len() > 1)
+        for ingredients in res.values_mut()
+            .filter(|ingredients| ingredients.len() > 1)
         {
-            v.retain(|ingredient| ingredient != &next);
-            if v.len() == 1 {
-                to_process.push(v.iter().next().unwrap().to_owned());
+            ingredients.retain(|ingredient| ingredient != &next);
+            if ingredients.len() == 1 {
+                to_process.push(*ingredients.iter().next().unwrap());
             }
         }
     }
-    res.iter().map(|(k, v)| {
-        assert_eq!(v.len(), 1);
-        (k.to_owned(), v.iter().next().unwrap().to_owned())
+    res.iter().map(|(allergen, ingredient)| {
+        assert_eq!(ingredient.len(), 1);
+        (allergen.to_string(), ingredient.iter().next().unwrap().to_string())
     }).collect()
 }
 
 fn part1(all: &Vec<String>,
          solved: &HashMap<String, String>) -> usize {
-    let solved = solved.values().map(ToOwned::to_owned).collect::<HashSet<_>>();
+    let solved = solved.values().collect::<HashSet<_>>();
     all.iter().filter(|&e| !solved.contains(e)).count()
 }
 
@@ -122,6 +122,20 @@ fn part2(solved: &HashMap<String, String>) -> String {
     let mut res = solved.iter().collect_vec();
     res.sort_unstable_by(|(k1, _), (k2, _)| k1.cmp(k2));
     res.iter().map(|(_, v)| v).join(",")
+}
+
+fn intersects<T>(sets: &Vec<HashSet<T>>) -> HashSet<&T>
+    where
+        T: Eq + Hash
+{
+    if sets.is_empty() {
+        return HashSet::new();
+    }
+    let mut res = sets[0].iter().map(Borrow::borrow).collect::<HashSet<_>>();
+    for set in &sets[1..] {
+        res.retain(|v| set.contains(v));
+    }
+    res
 }
 
 #[cfg(test)]
