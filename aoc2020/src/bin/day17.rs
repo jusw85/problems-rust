@@ -450,18 +450,15 @@ fn evolve(pts: &mut HashSet<Vec<i32>>) {
     }
     // pts should be cloned for atomic operation, but ok since rule overlap (3 neighbours = active)
     pts.retain(|pt| {
-        if let Some(&n) = num_neighbours.get(pt) {
-            if n == 2 || n == 3 {
-                return true;
-            }
+        match num_neighbours.get(pt) {
+            Some(&n) if n == 2 || n == 3 => true,
+            _ => false
         }
-        return false;
     });
-    let iter = num_neighbours.iter().filter_map(|(pt, &n)|
-        if n == 3 {
-            Some(pt.clone())
-        } else {
-            None
+    let iter = num_neighbours.drain().filter_map(|(pt, n)|
+        match n {
+            3 => Some(pt),
+            _ => None,
         }
     );
     pts.extend(iter);
@@ -469,21 +466,24 @@ fn evolve(pts: &mut HashSet<Vec<i32>>) {
 
 fn neighbours(pt: &Vec<i32>) -> Vec<Vec<i32>> {
     let mut res = vec![vec![]];
-    let mut res2 = Vec::new();
+    let mut tmp_res = Vec::new();
     for &dim in pt.iter() {
-        for mut x in res.drain(..) {
+        for x in res.drain(..) {
             let mut x1 = x.clone();
-            x1.push(dim - 1);
             let mut x2 = x.clone();
+            let mut x3 = x;
+
+            x1.push(dim - 1);
             x2.push(dim);
-            x.push(dim + 1);
-            res2.push(x1);
-            res2.push(x2);
-            res2.push(x);
+            x3.push(dim + 1);
+
+            tmp_res.push(x1);
+            tmp_res.push(x2);
+            tmp_res.push(x3);
         }
         let t = res;
-        res = res2;
-        res2 = t;
+        res = tmp_res;
+        tmp_res = t;
     }
     res.retain(|v| v != pt);
     res
