@@ -277,9 +277,10 @@ use itertools::Itertools;
 use num::integer::Roots;
 use regex::Regex;
 
+use aoc2020::Enumerate2D;
+
 use crate::chargrid::Grid;
 use crate::tileborder::SquareTileBorder;
-use aoc2020::Enumerate2D;
 
 const DRAGON_RAW: &str = r"
                   # 
@@ -644,7 +645,7 @@ mod chargrid {
     use anyhow::Result;
     use itertools::Itertools;
 
-    use aoc2020::{TrimEmpty, Enumerate2D};
+    use aoc2020::{Enumerate2D, TrimEmpty};
 
     use crate::geom::Vector2;
 
@@ -705,16 +706,40 @@ mod chargrid {
             Grid { grid, num_cols: num_rows, num_rows: num_cols }
         }
 
-        pub fn variations(&self) -> impl Iterator<Item=Self> {
-            std::iter::successors(Some((0, false, self.clone())), |(rot, flipped, prev)|
-                if *rot < 3 {
-                    Some((rot + 1, *flipped, prev.rotate_cw()))
-                } else if !flipped {
-                    Some((0, true, prev.rotate_cw().flip_x()))
-                } else {
-                    None
-                },
-            ).map(|(_, _, grid)| grid)
+        pub fn variations(&self) -> VariationIter {
+            VariationIter {
+                initial: self,
+                num_rotations: 0,
+                is_flipped: false,
+                next: Some(self.clone()),
+            }
+        }
+    }
+
+    pub struct VariationIter<'a> {
+        initial: &'a Grid,
+        num_rotations: usize,
+        is_flipped: bool,
+        next: Option<Grid>,
+    }
+
+    impl<'a> Iterator for VariationIter<'a> {
+        type Item = Grid;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            let item = self.next.take()?;
+
+            self.next = if self.num_rotations < 3 {
+                self.num_rotations += 1;
+                Some(item.rotate_cw())
+            } else if !self.is_flipped {
+                self.is_flipped = true;
+                self.num_rotations = 0;
+                Some(self.initial.flip_x())
+            } else {
+                None
+            };
+            Some(item)
         }
     }
 
