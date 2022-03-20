@@ -92,7 +92,7 @@ fn main() -> Result<()> {
 fn parse(s: &str) -> Vec<Vec<u8>> {
     let nums = s.lines()
         .trim_empty()
-        .map(|s| s.to_string().into_bytes())
+        .map(|s| s.as_bytes().to_owned())
         .collect_vec();
     nums
 }
