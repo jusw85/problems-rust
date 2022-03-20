@@ -141,20 +141,18 @@ impl Board {
     fn mark(&mut self, val: u8) {
         lazy_static::lazy_static! {
             static ref WINNING_POSITIONS: Vec<HashSet<usize>> =
-                vec![
-                    vec![0, 1, 2, 3, 4],
-                    vec![5, 6, 7, 8, 9],
-                    vec![10, 11, 12, 13, 14],
-                    vec![15, 16, 17, 18, 19],
-                    vec![20, 21, 22, 23, 24],
-                    vec![0, 5, 10, 15, 20],
-                    vec![1, 6, 11, 16, 21],
-                    vec![2, 7, 12, 17, 22],
-                    vec![3, 8, 13, 18, 23],
-                    vec![4, 9, 14, 19, 24],
-                ].into_iter().map(|c| {
-                    c.into_iter().collect::<HashSet<usize>>()
-                }).collect_vec();
+                [[0, 1, 2, 3, 4],
+                [5, 6, 7, 8, 9],
+                [10, 11, 12, 13, 14],
+                [15, 16, 17, 18, 19],
+                [20, 21, 22, 23, 24],
+                [0, 5, 10, 15, 20],
+                [1, 6, 11, 16, 21],
+                [2, 7, 12, 17, 22],
+                [3, 8, 13, 18, 23],
+                [4, 9, 14, 19, 24],]
+            .into_iter().map(|v| HashSet::from(v))
+            .collect_vec();
         }
 
         if let (None, Some(pos)) = (self.score, self.vals.get(&val)) {
