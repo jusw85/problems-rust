@@ -170,9 +170,7 @@ fn main() -> Result<()> {
 fn parse(s: &str) -> HashMap<&str, Vec<&str>> {
     let mut hm = HashMap::new();
     for line in s.lines().trim_empty() {
-        let mut it = line.split('-');
-        let n1 = it.next().unwrap();
-        let n2 = it.next().unwrap();
+        let (n1, n2) = line.split_once('-').unwrap();
         hm.entry(n1).or_insert(vec![]).push(n2);
         hm.entry(n2).or_insert(vec![]).push(n1);
     }
@@ -180,19 +178,19 @@ fn parse(s: &str) -> HashMap<&str, Vec<&str>> {
 }
 
 fn count_paths(paths: &HashMap<&str, Vec<&str>>, can_revisit: bool) -> u32 {
-    struct State<'a> {
+    struct State<'a, 'b> {
         node: &'a str,
-        visited: HashSet<&'a str>,
-        has_revisited: bool,
+        visited_nodes: &'b mut HashSet<&'a str>,
+        used_revisit: bool,
     }
 
     return count_paths_rec(
-        State { node: "start", visited: HashSet::new(), has_revisited: false },
+        State { node: "start", visited_nodes: &mut HashSet::new(), used_revisit: false },
         paths, can_revisit);
 
-    fn count_paths_rec(state: State,
-                       paths: &HashMap<&str, Vec<&str>>,
-                       can_revisit: bool) -> u32
+    fn count_paths_rec<'a, 'b>(state: State<'a, 'b>,
+                               paths: &HashMap<&str, Vec<&'a str>>,
+                               can_revisit: bool) -> u32
     {
         if state.node == "end" {
             return 1;
@@ -201,24 +199,29 @@ fn count_paths(paths: &HashMap<&str, Vec<&str>>, can_revisit: bool) -> u32 {
         let mut count = 0;
         let adj_nodes = paths.get(state.node).unwrap();
         for &node in adj_nodes {
-            let visited_node_before = state.visited.contains(node);
+            let visited_node_before = state.visited_nodes.contains(node);
             if node != "start" &&
                 ((!can_revisit && !visited_node_before) ||
-                    (can_revisit && !state.has_revisited) ||
-                    (can_revisit && state.has_revisited && !visited_node_before))
+                    (can_revisit && !state.used_revisit) ||
+                    (can_revisit && state.used_revisit && !visited_node_before))
             {
-                let mut visited = state.visited.clone();
                 if is_small_cave(node) {
-                    visited.insert(node);
+                    state.visited_nodes.insert(node);
                 }
-                let has_revisited = if can_revisit && !state.has_revisited && visited_node_before {
-                    true
-                } else {
-                    state.has_revisited
-                };
+                let (using_revisit, used_revisit) =
+                    if can_revisit && !state.used_revisit && visited_node_before {
+                        (true, true)
+                    } else {
+                        (false, state.used_revisit)
+                    };
 
-                count += count_paths_rec(State { node, visited, has_revisited },
-                                         paths, can_revisit);
+                count += count_paths_rec(
+                    State { node, visited_nodes: state.visited_nodes, used_revisit },
+                    paths, can_revisit);
+
+                if !using_revisit {
+                    state.visited_nodes.remove(node);
+                }
             }
         }
         count
