@@ -103,7 +103,7 @@ fn find_low_points(grid: &Grid) -> Vec<(Vector2, u8)> {
 
 fn compute_risk(low_points: &Vec<(Vector2, u8)>) -> u32 {
     low_points.iter()
-        .map(|&(_, val)| (val as char).to_digit(10).unwrap() + 1)
+        .map(|&(_, val)| (val - b'0' + 1) as u32)
         .sum()
 }
 

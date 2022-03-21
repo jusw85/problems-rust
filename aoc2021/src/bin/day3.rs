@@ -155,8 +155,8 @@ fn get_rating(nums: &Vec<Vec<u8>>, criteria: BitCriteria) -> u32 {
     }
 
     assert_eq!(r - l, 1);
-    nums[l].iter().fold(0, |acc, bit|
-        (acc << 1) + (*bit as char).to_digit(10).unwrap(),
+    nums[l].iter().fold(0, |acc, &bit|
+        (acc << 1) + (bit - b'0') as u32,
     )
 }
 
