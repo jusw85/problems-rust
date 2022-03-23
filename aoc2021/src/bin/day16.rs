@@ -127,6 +127,7 @@
 // Your puzzle answer was 9485076995911.
 
 use std::fs;
+use std::iter::successors;
 
 use anyhow::Result;
 use itertools::FoldWhile::{Continue, Done};
@@ -134,9 +135,9 @@ use itertools::Itertools;
 
 fn main() -> Result<()> {
     let input = fs::read_to_string("input/aoc2021/day16")?;
-    let mut bs = BitStream::new(&input);
+    let mut bs = get_bitstream(input.trim());
     let p = parse_packet(&mut bs);
-    bs.flush();
+    flush(&mut bs);
     println!("{:?}", sum_version(&p));
     println!("{:?}", p.val);
     Ok(())
@@ -151,9 +152,9 @@ struct Packet {
     childs: Vec<Packet>,
 }
 
-fn parse_packet(bs: &mut BitStream) -> Packet {
-    let version = bs.read_val(3);
-    let op = bs.read_val(3);
+fn parse_packet(bs: &mut impl Iterator<Item=u8>) -> Packet {
+    let version = read_val(bs, 3);
+    let op = read_val(bs, 3);
     let mut len = 6;
 
     if op == 4 {
@@ -167,19 +168,19 @@ fn parse_packet(bs: &mut BitStream) -> Packet {
     let mut childs = vec![];
     match i {
         0 => {
-            let l = bs.read_val(15) as usize;
-            len += 15 + l;
+            let l = read_val(bs, 15) as usize;
+            len += 15;
 
-            let mut slen = 0;
-            while slen < l {
+            let target = len + l;
+            while len < target {
                 let packet = parse_packet(bs);
-                slen += packet.len;
+                len += packet.len;
                 childs.push(packet);
             }
-            assert_eq!(slen, l);
+            assert_eq!(len, target);
         }
         1 => {
-            let l = bs.read_val(11) as usize;
+            let l = read_val(bs, 11) as usize;
             len += 11;
 
             for _ in 0..l {
@@ -208,7 +209,7 @@ fn sum_version(p: &Packet) -> u64 {
     p.version + p.childs.iter().map(sum_version).sum::<u64>()
 }
 
-fn parse_literal(bs: &mut BitStream) -> (usize, u64) {
+fn parse_literal(bs: &mut impl Iterator<Item=u8>) -> (usize, u64) {
     let (i, v) = bs.tuples()
         .fold_while((0, 0), |(i, acc), (sentinel, b3, b2, b1, b0)| {
             let v = (b3 << 3) + (b2 << 2) + (b1 << 1) + b0;
@@ -222,12 +223,63 @@ fn parse_literal(bs: &mut BitStream) -> (usize, u64) {
     (i * 5, v)
 }
 
+fn get_bitstream<'a>(s: &'a str) -> impl Iterator<Item=u8> + 'a {
+    s.chars().flat_map(|c| {
+        let c = c.to_digit(16).unwrap() as u8;
+        successors(Some(0x8), |&mask| {
+            let mask = mask >> 1;
+            if mask > 0 { Some(mask) } else { None }
+        }).map(move |mask| ((mask & c) > 0) as u8)
+    })
+}
+
+fn read_val(bs: &mut impl Iterator<Item=u8>, num_bits: usize) -> u64 {
+    bs.take(num_bits)
+        .fold(0, |acc, b| (acc << 1) + (b as u64))
+}
+
+fn flush(bs: &mut impl Iterator<Item=u8>) {
+    assert!(bs.all(|b| b == 0));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test() -> Result<()> {
+        let mut bs = get_bitstream("C0015000016115A2E0802F182340");
+        assert_eq!(23, sum_version(&parse_packet(&mut bs)));
+
+        let mut bs = get_bitstream("A0016C880162017C3686B18A3D4780");
+        assert_eq!(31, sum_version(&parse_packet(&mut bs)));
+
+        let mut bs = get_bitstream("C200B40A82");
+        assert_eq!(3, parse_packet(&mut bs).val);
+
+        let mut bs = get_bitstream("04005AC33890");
+        assert_eq!(54, parse_packet(&mut bs).val);
+
+        let mut bs = get_bitstream("880086C3E88112");
+        assert_eq!(7, parse_packet(&mut bs).val);
+
+        let mut bs = get_bitstream("9C005AC2F8F0");
+        assert_eq!(0, parse_packet(&mut bs).val);
+
+        let mut bs = get_bitstream("9C0141080250320F1802104A08");
+        assert_eq!(1, parse_packet(&mut bs).val);
+        Ok(())
+    }
+}
+
+// first attempt, unused
 struct BitStream {
     v: Vec<u8>,
     i: usize,
     mask: u8,
 }
 
+#[allow(dead_code)]
 impl BitStream {
     fn new(s: &str) -> BitStream {
         let v = s.trim().chars()
@@ -257,42 +309,12 @@ impl Iterator for BitStream {
         if *i >= v.len() {
             return None;
         }
-        let bit = if (v[*i] & *mask) > 0 { 1 } else { 0 };
+        let bit = ((v[*i] & *mask) > 0) as u8;
         *mask >>= 1;
         if *mask == 0 {
             *mask = 0x8;
             *i += 1;
         }
         Some(bit)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test() -> Result<()> {
-        let mut bs = BitStream::new("C0015000016115A2E0802F182340");
-        assert_eq!(23, sum_version(&parse_packet(&mut bs)));
-
-        let mut bs = BitStream::new("A0016C880162017C3686B18A3D4780");
-        assert_eq!(31, sum_version(&parse_packet(&mut bs)));
-
-        let mut bs = BitStream::new("C200B40A82");
-        assert_eq!(3, parse_packet(&mut bs).val);
-
-        let mut bs = BitStream::new("04005AC33890");
-        assert_eq!(54, parse_packet(&mut bs).val);
-
-        let mut bs = BitStream::new("880086C3E88112");
-        assert_eq!(7, parse_packet(&mut bs).val);
-
-        let mut bs = BitStream::new("9C005AC2F8F0");
-        assert_eq!(0, parse_packet(&mut bs).val);
-
-        let mut bs = BitStream::new("9C0141080250320F1802104A08");
-        assert_eq!(1, parse_packet(&mut bs).val);
-        Ok(())
     }
 }
