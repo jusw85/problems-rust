@@ -204,6 +204,7 @@ fn main() -> Result<()> {
 }
 
 type Cuboid = [i64; 6];
+type Bounds = ([i64; 2], Vec<[i64; 2]>);
 
 #[derive(Eq, PartialEq, Hash, Copy, Clone, Debug)]
 struct Step {
@@ -258,27 +259,47 @@ fn regions(steps: Vec<Step>) -> Vec<Cuboid> {
 
 fn merge(froms: &mut Vec<Cuboid>, to: &Cuboid) {
     for i in (0..froms.len()).rev() {
-        let mut merged = merge_single(froms[i], to);
-        if !merged.is_empty() {
-            froms.swap_remove(i);
-            merged.pop();
-            froms.extend(merged);
+        let merged = subtract(froms.swap_remove(i), to);
+        froms.extend(merged);
+    }
+}
+
+fn subtract(mut from: Cuboid, to: &Cuboid) -> Vec<Cuboid> {
+    fn get_bounds(from: &Cuboid, to: &Cuboid) -> Option<(Bounds, Bounds, Bounds)> {
+        let x_bounds = intersect_bounds(from[0], from[1], to[0], to[1])?;
+        let y_bounds = intersect_bounds(from[2], from[3], to[2], to[3])?;
+        let z_bounds = intersect_bounds(from[4], from[5], to[4], to[5])?;
+        Some((x_bounds, y_bounds, z_bounds))
+    }
+    match get_bounds(&from, to) {
+        None => vec![from],
+        Some((x_bounds, y_bounds, z_bounds)) => {
+            let mut res = vec![];
+            res.extend(x_bounds.1.iter().map(|bounds| {
+                let mut a = from.clone();
+                a[0..2].copy_from_slice(bounds);
+                a
+            }));
+            from[0..2].copy_from_slice(&x_bounds.0);
+
+            res.extend(y_bounds.1.iter().map(|bounds| {
+                let mut a = from.clone();
+                a[2..4].copy_from_slice(bounds);
+                a
+            }));
+            from[2..4].copy_from_slice(&y_bounds.0);
+
+            res.extend(z_bounds.1.iter().map(|bounds| {
+                let mut a = from.clone();
+                a[4..6].copy_from_slice(bounds);
+                a
+            }));
+            res
         }
     }
 }
 
-fn merge_single(from: Cuboid, to: &Cuboid) -> Vec<Cuboid> {
-    let x_bounds = intersect_bounds(from[0], from[1], to[0], to[1]);
-    let y_bounds = intersect_bounds(from[2], from[3], to[2], to[3]);
-    let z_bounds = intersect_bounds(from[4], from[5], to[4], to[5]);
-    x_bounds.iter()
-        .cartesian_product(y_bounds.iter())
-        .cartesian_product(z_bounds.iter())
-        .map(|((&(xl, xr), &(yl, yr)), &(zl, zr))| [xl, xr, yl, yr, zl, zr])
-        .collect_vec()
-}
-
-fn intersect_bounds(from_l: i64, from_r: i64, to_l: i64, to_r: i64) -> Vec<(i64, i64)> {
+fn intersect_bounds(from_l: i64, from_r: i64, to_l: i64, to_r: i64) -> Option<Bounds> {
     assert!(from_l <= from_r);
     assert!(to_l <= to_r);
     enum RangeOrdering {
@@ -294,12 +315,12 @@ fn intersect_bounds(from_l: i64, from_r: i64, to_l: i64, to_r: i64) -> Vec<(i64,
         }
     }
     match (range_cmp(from_l, to_l, to_r), range_cmp(from_r, to_l, to_r)) {
-        (RangeOrdering::Less, RangeOrdering::Less) => vec![],
-        (RangeOrdering::Less, RangeOrdering::Within) => vec![(from_l, to_l - 1), (to_l, from_r)],
-        (RangeOrdering::Less, RangeOrdering::Greater) => vec![(from_l, to_l - 1), (to_r + 1, from_r), (to_l, to_r)],
-        (RangeOrdering::Within, RangeOrdering::Within) => vec![(from_l, from_r)],
-        (RangeOrdering::Within, RangeOrdering::Greater) => vec![(to_r + 1, from_r), (from_l, to_r)],
-        (RangeOrdering::Greater, RangeOrdering::Greater) => vec![],
+        (RangeOrdering::Less, RangeOrdering::Less) => None,
+        (RangeOrdering::Less, RangeOrdering::Within) => Some(([to_l, from_r], vec![[from_l, to_l - 1]])),
+        (RangeOrdering::Less, RangeOrdering::Greater) => Some(([to_l, to_r], vec![[from_l, to_l - 1], [to_r + 1, from_r]])),
+        (RangeOrdering::Within, RangeOrdering::Within) => Some(([from_l, from_r], vec![])),
+        (RangeOrdering::Within, RangeOrdering::Greater) => Some(([from_l, to_r], vec![[to_r + 1, from_r]])),
+        (RangeOrdering::Greater, RangeOrdering::Greater) => None,
         (_, _) => unreachable!(),
     }
 }
